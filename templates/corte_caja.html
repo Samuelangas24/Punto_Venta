@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corte de Caja</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f6fa;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1rem 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            margin: -20px -20px 0 -20px;
+            padding: 1rem 20px;
+        }
+
+        .navbar-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .navbar-brand {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        body {
+            margin-top: 70px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 1.8em;
+        }
+
+        .back-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        input[type="number"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="number"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1em;
+            text-transform: uppercase;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-pdf {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-pdf:hover {
+            background: #c82333;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .status-abierto {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-cerrado {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .info-box {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            color: #333;
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .resumen-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .resumen-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .resumen-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+
+        .resumen-value {
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+
+        .table-section {
+            grid-column: 1 / -1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        thead {
+            background: #f0f0f0;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+            display: block;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+            display: block;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            body {
+                margin-top: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-content">
+            <div class="navbar-brand">💼 Corte de Caja</div>
+            <div>
+                <span style="margin-right: 30px;">{{ usuario }} | 📍 {{ sucursal }}</span>
+                <a href="{% url 'punto_de_venta' %}" style="color: white; text-decoration: none;">← Volver</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="message" id="message"></div>
+
+        <div class="header">
+            <h1>💰 Corte de Caja</h1>
+            <a href="{% url 'punto_de_venta' %}" class="back-link">← Volver al Dashboard</a>
+        </div>
+
+        {% if corte_abierto %}
+            <div class="grid">
+                <!-- Información del corte -->
+                <div class="card">
+                    <h2>📋 Información del Corte</h2>
+                    <div class="info-box">
+                        <div class="info-label">Estado</div>
+                        <div class="info-value">
+                            <span class="status-badge status-abierto">{{ corte_abierto.get_estado_display }}</span>
+                        </div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-label">Apertura</div>
+                        <div class="info-value">{{ corte_abierto.fecha_apertura|date:"d/m/Y H:i" }}</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-label">Monto Inicial</div>
+                        <div class="info-value">${{ corte_abierto.monto_inicial }}</div>
+                    </div>
+                </div>
+
+                <!-- Resumen de ventas -->
+                <div class="card">
+                    <h2>📊 Resumen de Ventas</h2>
+                    <div class="resumen-grid">
+                        <div class="resumen-card">
+                            <div class="resumen-label">Total de Ventas</div>
+                            <div class="resumen-value">{{ ventas_corte.count }}</div>
+                        </div>
+                        <div class="resumen-card">
+                            <div class="resumen-label">Monto Total</div>
+                            <div class="resumen-value">${{ total_ventas }}</div>
+                        </div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-label">Total a Cobrar</div>
+                        <div class="info-value">${{ corte_abierto.monto_inicial|add:total_ventas }}</div>
+                    </div>
+                </div>
+
+                <!-- Cerrar Corte -->
+                <div class="card table-section">
+                    <h2>✅ Cerrar Corte</h2>
+                    <form id="closeForm">
+                        <div class="form-group">
+                            <label for="notas">Notas (opcional)</label>
+                            <textarea id="notas" placeholder="Agregar observaciones del corte..."></textarea>
+                        </div>
+                        <div class="button-group">
+                            <button type="button" class="btn btn-secondary" onclick="abrirCorte()">Nuevo Corte</button>
+                            <button type="button" class="btn btn-success" onclick="cerrarCorte()">Cerrar Corte</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Tabla de ventas -->
+                <div class="card table-section">
+                    <h2>📜 Detalle de Ventas</h2>
+                    {% if ventas_corte %}
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID Venta</th>
+                                    <th>Hora</th>
+                                    <th>Usuario</th>
+                                    <th>Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for venta in ventas_corte %}
+                                    <tr>
+                                        <td>#{{ venta.id }}</td>
+                                        <td>{{ venta.fecha|date:"H:i:s" }}</td>
+                                        <td>{{ venta.usuario.username }}</td>
+                                        <td>${{ venta.total }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="empty-state">
+                            <p>Sin ventas registradas</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div class="card">
+                <h2>🔓 Abrir Nuevo Corte de Caja</h2>
+                <form id="openForm">
+                    <div class="form-group">
+                        <label for="montoInicial">Monto Inicial</label>
+                        <input type="number" id="montoInicial" min="0" step="0.01" value="0" required>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="abrirCorte()">Abrir Corte</button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function abrirCorte() {
+            const montoInicial = document.getElementById('montoInicial') ? 
+                parseFloat(document.getElementById('montoInicial').value) : 0;
+            
+            if (montoInicial < 0) {
+                mostrarMensaje('El monto inicial no puede ser negativo', 'error');
+                return;
+            }
+
+            fetch("{% url 'abrir_corte' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    monto_inicial: montoInicial
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarMensaje(data.mensaje, 'success');
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    mostrarMensaje(data.error || 'Error al abrir corte', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarMensaje('Error al procesar la solicitud', 'error');
+            });
+        }
+
+        function cerrarCorte() {
+            if (!confirm('¿Estás seguro de que deseas cerrar el corte?')) {
+                return;
+            }
+
+            const corteId = {{ corte_abierto.id }};
+            const notas = document.getElementById('notas').value;
+
+            fetch("{% url 'cerrar_corte' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    corte_id: corteId,
+                    notas: notas
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarMensaje(data.mensaje, 'success');
+                    setTimeout(() => {
+                        // Descargar PDF
+                        window.location.href = `{% url 'generar_pdf_corte' 0 %}`.replace('0', data.corte_id);
+                    }, 2000);
+                } else {
+                    mostrarMensaje(data.error || 'Error al cerrar corte', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarMensaje('Error al procesar la solicitud', 'error');
+            });
+        }
+
+        function mostrarMensaje(texto, tipo) {
+            const msg = document.getElementById('message');
+            msg.textContent = texto;
+            msg.className = `message ${tipo}`;
+            
+            setTimeout(() => {
+                msg.className = 'message';
+            }, 4000);
+        }
+    </script>
+</body>
+</html>

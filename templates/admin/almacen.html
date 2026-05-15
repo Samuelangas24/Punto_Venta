@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Almacén - Administración</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f6fa;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1rem 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            margin: -20px -20px 20px -20px;
+        }
+
+        .navbar-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .navbar-brand {
+            font-size: 1.4em;
+            font-weight: bold;
+        }
+
+        .back-link {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            padding: 10px 16px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            color: #333;
+        }
+
+        .description {
+            color: #555;
+            line-height: 1.6;
+            margin-top: 12px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 25px;
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            margin-bottom: 18px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            font-size: 1em;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab-button {
+            padding: 15px 25px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-size: 1em;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .status-box {
+            padding: 18px;
+            border-radius: 12px;
+            background: #eef4ff;
+            border: 1px solid #d5e2ff;
+            margin-bottom: 20px;
+        }
+
+        .status-box strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .message {
+            display: none;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .message.success {
+            display: block;
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .message.error {
+            display: block;
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .table-container {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        thead {
+            background: #f8f9fa;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .action-buttons button {
+            flex: 1;
+            padding: 10px;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            .tabs {
+                flex-wrap: wrap;
+            }
+            .tab-button {
+                padding: 10px 15px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-content">
+            <div class="navbar-brand">🏬 Almacén</div>
+            <a href="{% url 'punto_de_venta' %}" class="back-link">← Volver al Dashboard</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>Control de Almacén por Sucursal</h1>
+                <p class="description">Selecciona la sucursal y elige entre AÑADIR productos nuevos o BUSCAR/MODIFICAR productos existentes.</p>
+            </div>
+        </div>
+
+        <div class="message" id="message"></div>
+
+        <div class="card">
+            <label for="sucursal_select"><strong>🏢 Seleccionar Sucursal</strong></label>
+            <select id="sucursal_select" onchange="cambiarSucursal()">
+                <option value="">Seleccione una sucursal...</option>
+                {% for sucursal in sucursales %}
+                    <option value="{{ sucursal.id }}" {% if sucursal_seleccionada and sucursal.id == sucursal_seleccionada.id %}selected{% endif %}>{{ sucursal.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- TABS -->
+        <div class="card">
+            <div class="tabs">
+                <button class="tab-button active" onclick="cambiarTab('anadir')">➕ AÑADIR PRODUCTO</button>
+                <button class="tab-button" onclick="cambiarTab('buscar')">🔍 BUSCAR / MODIFICAR</button>
+            </div>
+
+            <!-- TAB 1: AÑADIR PRODUCTO -->
+            <div id="tab-anadir" class="tab-content active">
+                <div class="status-box">
+                    <strong>Modo: Agregar Producto Nuevo</strong>
+                    <p>Escanea un código de barras NEW, completa los datos del producto y defina la cantidad a agregar a la sucursal seleccionada.</p>
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <label for="codigo_anadir">📱 Código de Barras</label>
+                        <input type="text" id="codigo_anadir" placeholder="Escanea el código aquí" autofocus onkeypress="handleBarcodeKey(event, 'anadir')">
+                    </div>
+                    <div></div>
+                </div>
+
+                <label for="nombre_anadir"><strong>Nombre del Producto</strong></label>
+                <input type="text" id="nombre_anadir" placeholder="Nombre del producto">
+
+                <label for="descripcion_anadir"><strong>Descripción</strong></label>
+                <textarea id="descripcion_anadir" rows="3" placeholder="Descripción del producto (opcional)"></textarea>
+
+                <div class="grid-2">
+                    <div>
+                        <label for="precio_anadir"><strong>💵 Precio de Venta</strong></label>
+                        <input type="number" id="precio_anadir" min="0.01" step="0.01" placeholder="0.00">
+                    </div>
+                    <div>
+                        <label for="cantidad_anadir"><strong>📦 Cantidad</strong></label>
+                        <input type="number" id="cantidad_anadir" min="1" step="1" placeholder="1" value="1">
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="guardarProductoNuevo()">✅ Guardar Producto</button>
+                    <button class="btn btn-secondary" onclick="limpiarFormularioAnadir()">🔄 Limpiar</button>
+                </div>
+            </div>
+
+            <!-- TAB 2: BUSCAR Y MODIFICAR -->
+            <div id="tab-buscar" class="tab-content">
+                <div class="status-box">
+                    <strong>Modo: Buscar y Modificar Producto</strong>
+                    <p>Escanea el código de un producto existente para verlo, modificar cantidad/precio/descripción, o eliminarlo.</p>
+                </div>
+
+                <label for="codigo_buscar"><strong>🔎 Código de Barras</strong></label>
+                <input type="text" id="codigo_buscar" placeholder="Escanea el código aquí" onkeypress="handleBarcodeKey(event, 'buscar')">
+
+                <div id="resultado-buscar" style="display:none;">
+                    <div class="status-box">
+                        <strong id="resultado-titulo"></strong>
+                        <div id="resultado-detalle"></div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div>
+                            <label><strong>Código:</strong></label>
+                            <p id="mostrar-codigo" style="padding: 12px; background: #f0f0f0; border-radius: 8px;">-</p>
+                        </div>
+                        <div>
+                            <label><strong>Nombre:</strong></label>
+                            <p id="mostrar-nombre" style="padding: 12px; background: #f0f0f0; border-radius: 8px;">-</p>
+                        </div>
+                    </div>
+
+                    <label for="mostrar-precio"><strong>Precio Actual:</strong></label>
+                    <p id="mostrar-precio" style="padding: 12px; background: #f0f0f0; border-radius: 8px; margin-bottom: 18px;">-</p>
+
+                    <label for="mostrar-cantidad"><strong>Cantidad en Sucursal:</strong></label>
+                    <p id="mostrar-cantidad" style="padding: 12px; background: #f0f0f0; border-radius: 8px; margin-bottom: 18px;">-</p>
+
+                    <label for="mostrar-descripcion"><strong>Descripción:</strong></label>
+                    <p id="mostrar-descripcion" style="padding: 12px; background: #f0f0f0; border-radius: 8px; margin-bottom: 18px;">-</p>
+
+                    <div style="border-top: 2px solid #e0e0e0; padding-top: 20px; margin-top: 20px;">
+                        <h3 style="margin-bottom: 15px;">Opciones de Modificación:</h3>
+
+                        <div class="action-buttons">
+                            <button class="btn btn-secondary" onclick="mostrarOpciones('cantidad')">📝 Modificar Cantidad</button>
+                            <button class="btn btn-secondary" onclick="mostrarOpciones('precio')">💵 Modificar Precio</button>
+                        </div>
+
+                        <div class="action-buttons">
+                            <button class="btn btn-secondary" onclick="mostrarOpciones('descripcion')">📄 Modificar Descripción</button>
+                            <button class="btn btn-danger" onclick="eliminarProductoBusqueda()">🗑️ Eliminar</button>
+                        </div>
+                    </div>
+
+                    <!-- Panel de Edición Dinámico -->
+                    <div id="panel-edicion" style="display:none; margin-top: 20px; padding: 20px; background: #f9f9f9; border-radius: 10px;">
+                        <h4 id="panel-titulo" style="margin-bottom: 15px;"></h4>
+                        
+                        <div id="campo-cantidad" style="display:none;">
+                            <label for="nuevo-cantidad"><strong>Nueva Cantidad:</strong></label>
+                            <input type="number" id="nuevo-cantidad" min="0" step="1">
+                            <div class="button-group" style="margin-top: 15px;">
+                                <button class="btn btn-primary" onclick="guardarCambio('cantidad')">Guardar</button>
+                                <button class="btn btn-secondary" onclick="cerrarEdicion()">Cancelar</button>
+                            </div>
+                        </div>
+
+                        <div id="campo-precio" style="display:none;">
+                            <label for="nuevo-precio"><strong>Nuevo Precio:</strong></label>
+                            <input type="number" id="nuevo-precio" min="0.01" step="0.01">
+                            <div class="button-group" style="margin-top: 15px;">
+                                <button class="btn btn-primary" onclick="guardarCambio('precio')">Guardar</button>
+                                <button class="btn btn-secondary" onclick="cerrarEdicion()">Cancelar</button>
+                            </div>
+                        </div>
+
+                        <div id="campo-descripcion" style="display:none;">
+                            <label for="nuevo-descripcion"><strong>Nueva Descripción:</strong></label>
+                            <textarea id="nuevo-descripcion" rows="4"></textarea>
+                            <div class="button-group" style="margin-top: 15px;">
+                                <button class="btn btn-primary" onclick="guardarCambio('descripcion')">Guardar</button>
+                                <button class="btn btn-secondary" onclick="cerrarEdicion()">Cancelar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLA DE INVENTARIO ACTUAL -->
+        {% if sucursal_seleccionada %}
+            <div class="table-container">
+                <h2>📋 Inventario Actual</h2>
+                {% if inventario %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Producto</th>
+                                <th>Precio</th>
+                                <th>Cantidad</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in inventario %}
+                                <tr>
+                                    <td><code>{{ item.producto.codigo_barras|default:'Sin código' }}</code></td>
+                                    <td><strong>{{ item.producto.nombre }}</strong></td>
+                                    <td>${{ item.producto.precio_venta }}</td>
+                                    <td><strong>{{ item.cantidad }}</strong></td>
+                                    <td><button class="btn btn-secondary" style="padding: 8px 12px;" onclick="cargarProductoBusca('{{ item.producto.codigo_barras }}')">Editar</button></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div style="padding: 40px; text-align:center; color:#666;">
+                        <div style="font-size: 3em; margin-bottom: 10px;">📦</div>
+                        <h3>No hay productos en esta sucursal</h3>
+                        <p>Usa la sección "AÑADIR PRODUCTO" para comenzar.</p>
+                    </div>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="card" style="text-align: center; padding: 60px 20px;">
+                <div style="font-size: 4em; margin-bottom: 20px;">🏷️</div>
+                <h2>Selecciona una sucursal primero</h2>
+                <p style="color: #666;">Elige una sucursal del dropdown arriba para empezar.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        let currentProducto = null;
+        let currentInventoryId = null;
+        let currentProductId = null;
+
+        function cambiarTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            event.target.classList.add('active');
+            
+            limpiarFormularioBusqueda();
+            limpiarFormularioAnadir();
+        }
+
+        function cambiarSucursal() {
+            const sucursalId = document.getElementById('sucursal_select').value;
+            if (sucursalId) {
+                window.location.href = `?sucursal=${sucursalId}`;
+            }
+        }
+
+        function handleBarcodeKey(event, modo) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                if (modo === 'anadir') {
+                    buscarParaAnadir();
+                } else {
+                    buscarProducto();
+                }
+            }
+        }
+
+        // ============ MODO AÑADIR ============
+        function buscarParaAnadir() {
+            const codigo = document.getElementById('codigo_anadir').value.trim();
+            if (!codigo) {
+                mostrarMensaje('Escanea o ingresa el código de barras.', 'error');
+                return;
+            }
+            
+            fetch(`{% url 'api_almacen_buscar' %}?q=${encodeURIComponent(codigo)}&sucursal_id=${document.getElementById('sucursal_select').value}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.producto && data.producto.in_branch) {
+                        mostrarMensaje('Este producto ya existe en la sucursal. Usa la sección BUSCAR para modificarlo.', 'error');
+                        document.getElementById('codigo_anadir').value = '';
+                    } else if (data.producto) {
+                        llenarFormularioAnadir(data.producto);
+                    }
+                })
+                .catch(() => {
+                    mostrarMensaje('Error buscando producto.', 'error');
+                });
+        }
+
+        function llenarFormularioAnadir(producto) {
+            document.getElementById('nombre_anadir').value = producto.nombre;
+            document.getElementById('descripcion_anadir').value = producto.descripcion;
+            document.getElementById('precio_anadir').value = producto.precio;
+            currentProductId = producto.id;
+        }
+
+        function guardarProductoNuevo() {
+            const sucursalId = document.getElementById('sucursal_select').value;
+            const codigo = document.getElementById('codigo_anadir').value.trim();
+            const nombre = document.getElementById('nombre_anadir').value.trim();
+            const descripcion = document.getElementById('descripcion_anadir').value.trim();
+            const precio = document.getElementById('precio_anadir').value;
+            const cantidad = document.getElementById('cantidad_anadir').value;
+
+            if (!sucursalId) {
+                mostrarMensaje('Selecciona una sucursal primero.', 'error');
+                return;
+            }
+            if (!codigo || !nombre || !precio) {
+                mostrarMensaje('Completa código, nombre y precio.', 'error');
+                return;
+            }
+
+            fetch('{% url 'guardar_producto_almacen' %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    sucursal_id: sucursalId,
+                    codigo_barras: codigo,
+                    nombre: nombre,
+                    descripcion: descripcion,
+                    precio: precio,
+                    cantidad: cantidad
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarMensaje(data.mensaje + ' ✅', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    mostrarMensaje(data.error || 'Error.', 'error');
+                }
+            })
+            .catch(() => mostrarMensaje('Error de red.', 'error'));
+        }
+
+        function limpiarFormularioAnadir() {
+            document.getElementById('codigo_anadir').value = '';
+            document.getElementById('nombre_anadir').value = '';
+            document.getElementById('descripcion_anadir').value = '';
+            document.getElementById('precio_anadir').value = '';
+            document.getElementById('cantidad_anadir').value = 1;
+            currentProductId = null;
+        }
+
+        // ============ MODO BUSCAR/MODIFICAR ============
+        function buscarProducto() {
+            const codigo = document.getElementById('codigo_buscar').value.trim();
+            const sucursalId = document.getElementById('sucursal_select').value;
+
+            if (!sucursalId) {
+                mostrarMensaje('Selecciona una sucursal primero.', 'error');
+                return;
+            }
+            if (!codigo) {
+                mostrarMensaje('Escanea o ingresa el código.', 'error');
+                return;
+            }
+
+            fetch(`{% url 'api_almacen_buscar' %}?q=${encodeURIComponent(codigo)}&sucursal_id=${encodeURIComponent(sucursalId)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.producto) {
+                        mostrarProductoEncontrado(data.producto);
+                    } else {
+                        mostrarMensaje('Producto no encontrado. ¿Quieres crearlo?', 'error');
+                        document.getElementById('resultado-buscar').style.display = 'none';
+                    }
+                })
+                .catch(() => mostrarMensaje('Error buscando.', 'error'));
+        }
+
+        function mostrarProductoEncontrado(producto) {
+            currentProducto = producto;
+            currentInventoryId = producto.inventory_id;
+            currentProductId = producto.id;
+
+            document.getElementById('mostrar-codigo').textContent = producto.codigo_barras || 'Sin código';
+            document.getElementById('mostrar-nombre').textContent = producto.nombre;
+            document.getElementById('mostrar-precio').textContent = `$${producto.precio.toFixed(2)}`;
+            document.getElementById('mostrar-cantidad').textContent = producto.cantidad;
+            document.getElementById('mostrar-descripcion').textContent = producto.descripcion || '(Sin descripción)';
+
+            if (producto.in_branch) {
+                document.getElementById('resultado-titulo').textContent = '✅ Producto encontrado en la sucursal';
+                document.getElementById('resultado-detalle').textContent = 'Puedes modificar o eliminar este producto.';
+            } else {
+                document.getElementById('resultado-titulo').textContent = '⚠️ Producto existe globalmente';
+                document.getElementById('resultado-detalle').textContent = 'Este producto existe pero no está en esta sucursal.';
+            }
+
+            document.getElementById('resultado-buscar').style.display = 'block';
+            cerrarEdicion();
+        }
+
+        function cargarProductoBusca(codigo) {
+            document.getElementById('codigo_buscar').value = codigo;
+            document.getElementById('tab-buscar').scrollIntoView({ behavior: 'smooth' });
+            setTimeout(buscarProducto, 300);
+        }
+
+        function mostrarOpciones(tipo) {
+            document.getElementById('panel-edicion').style.display = 'block';
+            document.getElementById('campo-cantidad').style.display = 'none';
+            document.getElementById('campo-precio').style.display = 'none';
+            document.getElementById('campo-descripcion').style.display = 'none';
+
+            if (tipo === 'cantidad') {
+                document.getElementById('panel-titulo').textContent = '✏️ Modificar Cantidad';
+                document.getElementById('nuevo-cantidad').value = currentProducto.cantidad;
+                document.getElementById('campo-cantidad').style.display = 'block';
+            } else if (tipo === 'precio') {
+                document.getElementById('panel-titulo').textContent = '✏️ Modificar Precio';
+                document.getElementById('nuevo-precio').value = currentProducto.precio;
+                document.getElementById('campo-precio').style.display = 'block';
+            } else if (tipo === 'descripcion') {
+                document.getElementById('panel-titulo').textContent = '✏️ Modificar Descripción';
+                document.getElementById('nuevo-descripcion').value = currentProducto.descripcion || '';
+                document.getElementById('campo-descripcion').style.display = 'block';
+            }
+        }
+
+        function guardarCambio(tipo) {
+            if (tipo === 'cantidad') {
+                const nuevaCantidad = parseInt(document.getElementById('nuevo-cantidad').value);
+                if (isNaN(nuevaCantidad) || nuevaCantidad < 0) {
+                    mostrarMensaje('Cantidad inválida.', 'error');
+                    return;
+                }
+                
+                fetch('{% url 'actualizar_cantidad_almacen' %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        inventory_id: currentInventoryId,
+                        cantidad: nuevaCantidad
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        mostrarMensaje('Cantidad actualizada ✅', 'success');
+                        currentProducto.cantidad = nuevaCantidad;
+                        document.getElementById('mostrar-cantidad').textContent = nuevaCantidad;
+                        cerrarEdicion();
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        mostrarMensaje(data.error, 'error');
+                    }
+                });
+            } 
+            else if (tipo === 'precio') {
+                const nuevoPrecio = parseFloat(document.getElementById('nuevo-precio').value);
+                if (isNaN(nuevoPrecio) || nuevoPrecio <= 0) {
+                    mostrarMensaje('Precio inválido.', 'error');
+                    return;
+                }
+
+                fetch('{% url 'actualizar_precio_almacen' %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        producto_id: currentProductId,
+                        precio: nuevoPrecio
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        mostrarMensaje('Precio actualizado ✅', 'success');
+                        currentProducto.precio = nuevoPrecio;
+                        document.getElementById('mostrar-precio').textContent = `$${nuevoPrecio.toFixed(2)}`;
+                        cerrarEdicion();
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        mostrarMensaje(data.error, 'error');
+                    }
+                });
+            }
+            else if (tipo === 'descripcion') {
+                const nuevaDescripcion = document.getElementById('nuevo-descripcion').value.trim();
+
+                fetch('{% url 'actualizar_descripcion_almacen' %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        producto_id: currentProductId,
+                        descripcion: nuevaDescripcion
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        mostrarMensaje('Descripción actualizada ✅', 'success');
+                        currentProducto.descripcion = nuevaDescripcion;
+                        document.getElementById('mostrar-descripcion').textContent = nuevaDescripcion || '(Sin descripción)';
+                        cerrarEdicion();
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        mostrarMensaje(data.error, 'error');
+                    }
+                });
+            }
+        }
+
+        function cerrarEdicion() {
+            document.getElementById('panel-edicion').style.display = 'none';
+        }
+
+        function eliminarProductoBusqueda() {
+            if (!currentInventoryId) {
+                mostrarMensaje('No hay producto seleccionado.', 'error');
+                return;
+            }
+            if (!confirm('¿Eliminar este producto de la sucursal?')) {
+                return;
+            }
+
+            fetch('{% url 'eliminar_producto_almacen' %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    inventario_id: currentInventoryId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarMensaje(data.mensaje + ' ✅', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    mostrarMensaje(data.error, 'error');
+                }
+            });
+        }
+
+        function limpiarFormularioBusqueda() {
+            document.getElementById('codigo_buscar').value = '';
+            document.getElementById('resultado-buscar').style.display = 'none';
+            currentProducto = null;
+            currentInventoryId = null;
+            cerrarEdicion();
+        }
+
+        function mostrarMensaje(texto, tipo) {
+            const message = document.getElementById('message');
+            message.textContent = texto;
+            message.className = `message ${tipo}`;
+            
+            if (tipo === 'success') {
+                setTimeout(() => {
+                    message.className = 'message';
+                }, 3000);
+            }
+        }
+
+        // Enfocar el campo correcto al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            const sucursalId = document.getElementById('sucursal_select').value;
+            if (sucursalId) {
+                document.getElementById('codigo_anadir').focus();
+            }
+        });
+    </script>
+</body>
+</html>

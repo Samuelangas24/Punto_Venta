@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultar Inventario</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f6fa;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1rem 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            margin: -20px -20px 0 -20px;
+            padding: 1rem 20px;
+        }
+
+        .navbar-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .navbar-brand {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        body {
+            margin-top: 70px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 1.8em;
+        }
+
+        .back-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .search-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        #buscar {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        #buscar:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-filtrar {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-filtrar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .table-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f0f0f0;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85em;
+        }
+
+        .status-stock {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-agotado {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-bajo {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            .table-container {
+                padding: 15px;
+            }
+
+            th, td {
+                padding: 10px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-content">
+            <div class="navbar-brand">📦 Inventario</div>
+            <div>
+                <span style="margin-right: 30px;">{{ usuario }} | 📍 {{ sucursal }}</span>
+                <a href="{% url 'punto_de_venta' %}" style="color: white; text-decoration: none;">← Volver</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>📦 Consultar Inventario</h1>
+            <a href="{% url 'punto_de_venta' %}" class="back-link">← Volver al Dashboard</a>
+        </div>
+
+        <div class="search-section">
+            <h2 style="margin-bottom: 15px; color: #333;">🔍 Buscar Productos</h2>
+            <div class="search-box">
+                <input type="text" id="buscar" placeholder="Buscar por nombre de producto...">
+                <button class="btn-filtrar" onclick="filtrarInventario()">Filtrar</button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value">{{ inventario.count }}</div>
+                <div class="stat-label">Total de Productos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="total-stock">0</div>
+                <div class="stat-label">Unidades en Stock</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="productos-bajo">0</div>
+                <div class="stat-label">Stock Bajo</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            {% if inventario %}
+                <table id="inventarioTable">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Producto</th>
+                            <th>Precio</th>
+                            <th>Cantidad</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in inventario %}
+                            <tr class="producto-row" data-nombre="{{ item.producto.nombre|lower }}">
+                                <td>{{ item.producto.codigo_barras|default:"Sin código" }}</td>
+                                <td>
+                                    <strong>{{ item.producto.nombre }}</strong>
+                                    {% if item.producto.descripcion %}
+                                        <br><small style="color: #999;">{{ item.producto.descripcion|truncatewords:5 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>${{ item.producto.precio_venta }}</td>
+                                <td>
+                                    <strong>{{ item.cantidad }}</strong>
+                                </td>
+                                <td>
+                                    {% if item.cantidad > 10 %}
+                                        <span class="status-badge status-stock">✓ En Stock</span>
+                                    {% elif item.cantidad > 0 %}
+                                        <span class="status-badge status-bajo">⚠ Stock Bajo</span>
+                                    {% else %}
+                                        <span class="status-badge status-agotado">✗ Agotado</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <h3>No hay productos en inventario</h3>
+                    <p>Agrega productos a través del panel administrativo</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function filtrarInventario() {
+            const filtro = document.getElementById('buscar').value.toLowerCase();
+            const filas = document.querySelectorAll('.producto-row');
+            let visibles = 0;
+
+            filas.forEach(fila => {
+                const nombre = fila.getAttribute('data-nombre');
+                if (nombre.includes(filtro)) {
+                    fila.style.display = '';
+                    visibles++;
+                } else {
+                    fila.style.display = 'none';
+                }
+            });
+
+            if (visibles === 0 && filtro) {
+                console.log('Sin resultados');
+            }
+        }
+
+        function calcularEstadisticas() {
+            let totalStock = 0;
+            let productoBajo = 0;
+
+            document.querySelectorAll('.producto-row').forEach(fila => {
+                const cantidad = parseInt(fila.querySelector('td:nth-child(4) strong').textContent);
+                totalStock += cantidad;
+                if (cantidad > 0 && cantidad <= 10) {
+                    productoBajo++;
+                }
+            });
+
+            document.getElementById('total-stock').textContent = totalStock;
+            document.getElementById('productos-bajo').textContent = productoBajo;
+        }
+
+        calcularEstadisticas();
+
+        document.getElementById('buscar').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                filtrarInventario();
+            }
+        });
+    </script>
+</body>
+</html>
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f6fa;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1rem 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            margin: -20px -20px 0 -20px;
+            padding: 1rem 20px;
+        }
+
+        .navbar-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .navbar-brand {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        body {
+            margin-top: 70px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 1.8em;
+        }
+
+        .back-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .search-section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        #buscarProducto {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        #buscarProducto:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-filtro {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-filtro:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .filtros {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filtro-btn {
+            padding: 8px 16px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .filtro-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .filtro-btn:hover {
+            border-color: #667eea;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f0f0f0;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .badge-stock {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-agotado {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .badge-bajo {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .search-container {
+                flex-direction: column;
+            }
+
+            .filtros {
+                flex-direction: column;
+            }
+
+            .filtro-btn {
+                width: 100%;
+            }
+
+            th, td {
+                padding: 10px;
+                font-size: 0.9em;
+            }
+
+            body {
+                margin-top: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-content">
+            <div class="navbar-brand">📦 Consultar Inventario</div>
+            <div>
+                <span style="margin-right: 30px;">{{ usuario }} | 📍 {{ sucursal }}</span>
+                <a href="{% url 'punto_de_venta' %}" style="color: white; text-decoration: none;">← Volver</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>📊 Disponibilidad de Inventario</h1>
+            <a href="{% url 'punto_de_venta' %}" class="back-link">← Volver al Dashboard</a>
+        </div>
+
+        <!-- Busqueda y filtros -->
+        <div class="search-section">
+            <div class="search-container">
+                <input type="text" id="buscarProducto" placeholder="🔎 Buscar producto por nombre...">
+                <button class="btn-filtro" onclick="limpiarBusqueda()">Limpiar</button>
+            </div>
+
+            <div class="filtros">
+                <button class="filtro-btn active" onclick="filtrarPor('todos')">Todos</button>
+                <button class="filtro-btn" onclick="filtrarPor('stock')">En Stock</button>
+                <button class="filtro-btn" onclick="filtrarPor('bajo')">Stock Bajo</button>
+                <button class="filtro-btn" onclick="filtrarPor('agotado')">Agotados</button>
+            </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalProductos">{{ inventario.count }}</div>
+                <div class="stat-label">Total de Productos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="productosStock">-</div>
+                <div class="stat-label">En Stock</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="productosBajo">-</div>
+                <div class="stat-label">Stock Bajo</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="productosAgotados">-</div>
+                <div class="stat-label">Agotados</div>
+            </div>
+        </div>
+
+        <!-- Tabla -->
+        <div class="table-container">
+            {% if inventario %}
+                <table id="inventarioTable">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Código</th>
+                            <th>Precio</th>
+                            <th>Cantidad</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventarioBody">
+                        {% for item in inventario %}
+                            <tr class="producto-row" data-cantidad="{{ item.cantidad }}">
+                                <td>{{ item.producto.nombre }}</td>
+                                <td>{{ item.producto.codigo_barras|default:"Sin código" }}</td>
+                                <td>${{ item.producto.precio_venta }}</td>
+                                <td><strong>{{ item.cantidad }}</strong> unidades</td>
+                                <td>
+                                    {% if item.cantidad == 0 %}
+                                        <span class="badge badge-agotado">❌ Agotado</span>
+                                    {% elif item.cantidad <= 10 %}
+                                        <span class="badge badge-bajo">⚠️ Stock Bajo</span>
+                                    {% else %}
+                                        <span class="badge badge-stock">✓ En Stock</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <h3>No hay productos en el inventario</h3>
+                    <p>Agrega productos al inventario para verlos aquí</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        let filtroActual = 'todos';
+
+        document.getElementById('buscarProducto').addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('.producto-row');
+            
+            rows.forEach(row => {
+                const nombre = row.cells[0].textContent.toLowerCase();
+                const codigo = row.cells[1].textContent.toLowerCase();
+                const estado = getEstado(row.getAttribute('data-cantidad'));
+                
+                const coincide = nombre.includes(query) || codigo.includes(query);
+                const filtroCorrecto = filtroActual === 'todos' || estado === filtroActual;
+                
+                row.style.display = coincide && filtroCorrecto ? '' : 'none';
+            });
+        });
+
+        function filtrarPor(tipo) {
+            filtroActual = tipo;
+            
+            // Actualizar botones
+            document.querySelectorAll('.filtro-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Filtrar tabla
+            const query = document.getElementById('buscarProducto').value.toLowerCase();
+            const rows = document.querySelectorAll('.producto-row');
+            
+            rows.forEach(row => {
+                const nombre = row.cells[0].textContent.toLowerCase();
+                const codigo = row.cells[1].textContent.toLowerCase();
+                const cantidad = parseInt(row.getAttribute('data-cantidad'));
+                const estado = getEstado(cantidad);
+                
+                const coincide = nombre.includes(query) || codigo.includes(query);
+                const filtroCorrecto = tipo === 'todos' || estado === tipo;
+                
+                row.style.display = coincide && filtroCorrecto ? '' : 'none';
+            });
+        }
+
+        function getEstado(cantidad) {
+            if (cantidad === 0) return 'agotado';
+            if (cantidad <= 10) return 'bajo';
+            return 'stock';
+        }
+
+        function limpiarBusqueda() {
+            document.getElementById('buscarProducto').value = '';
+            filtroActual = 'todos';
+            document.querySelectorAll('.filtro-btn')[0].click();
+        }
+
+        // Calcular estadísticas
+        function actualizarEstadisticas() {
+            let stock = 0, bajo = 0, agotado = 0;
+            
+            document.querySelectorAll('.producto-row').forEach(row => {
+                const cantidad = parseInt(row.getAttribute('data-cantidad'));
+                if (cantidad === 0) agotado++;
+                else if (cantidad <= 10) bajo++;
+                else stock++;
+            });
+            
+            document.getElementById('productosStock').textContent = stock;
+            document.getElementById('productosBajo').textContent = bajo;
+            document.getElementById('productosAgotados').textContent = agotado;
+        }
+
+        // Inicializar
+        actualizarEstadisticas();
+    </script>
+</body>
+</html>
