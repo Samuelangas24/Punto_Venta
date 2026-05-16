@@ -352,25 +352,38 @@
         <h2 class="section-title" style="margin-top: 50px;">Resumen Rápido</h2>
         <div class="stats-section">
             <div class="stat-box">
-                <div class="stat-value">0</div>
+                <div class="stat-value" id="ventas-hoy">0</div>
                 <div class="stat-label">Ventas Hoy</div>
             </div>
             <div class="stat-box">
-                <div class="stat-value">$0.00</div>
+                <div class="stat-value" id="ingresos-hoy">$0.00</div>
                 <div class="stat-label">Ingresos Hoy</div>
             </div>
             <div class="stat-box">
-                <div class="stat-value">0</div>
+                <div class="stat-value" id="productos-hoy">0</div>
                 <div class="stat-label">Productos</div>
             </div>
         </div>
     </div>
 
     <script>
-        // Mostrar fecha actual
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         const today = new Date();
         document.getElementById('fecha').textContent = today.toLocaleDateString('es-ES', options);
+
+        function actualizarEstadisticas() {
+            fetch("{% url 'api_estadisticas_hoy' %}")
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('ventas-hoy').textContent = data.total_ventas;
+                    document.getElementById('ingresos-hoy').textContent = `$${data.total_ingresos.toFixed(2)}`;
+                    document.getElementById('productos-hoy').textContent = data.productos_vendidos;
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        actualizarEstadisticas();
+        setInterval(actualizarEstadisticas, 5000);
     </script>
 </body>
 </html>

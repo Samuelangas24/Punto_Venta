@@ -501,8 +501,8 @@
                 if (data.success) {
                     mostrarMensaje(data.mensaje, 'success');
                     setTimeout(() => {
-                        // Descargar PDF
-                        window.location.href = `{% url 'generar_pdf_corte' 0 %}`.replace('0', data.corte_id);
+                        const pdfUrl = `{% url 'generar_pdf_corte' 0 %}`.replace('0', data.corte_id);
+                        window.open(pdfUrl, '_blank');
                     }, 2000);
                 } else {
                     mostrarMensaje(data.error || 'Error al cerrar corte', 'error');

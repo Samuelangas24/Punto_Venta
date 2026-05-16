@@ -684,9 +684,12 @@
                     mostrarMensaje(`✓ ${data.mensaje}`, 'success');
                     Object.keys(carrito).forEach(key => delete carrito[key]);
                     actualizarCarrito();
+                    if (data.recibo_url) {
+                        window.open(data.recibo_url, '_blank');
+                    }
                     setTimeout(() => {
                         window.location.reload();
-                    }, 2000);
+                    }, 2500);
                 } else {
                     mostrarMensaje(data.error || 'Error al guardar venta', 'error');
                 }

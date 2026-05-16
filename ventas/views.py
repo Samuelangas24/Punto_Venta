@@ -4,6 +4,7 @@ from django.http import JsonResponse, HttpResponse
 from django.db import transaction
 from django.db.models import Sum, Q
 from django.utils import timezone
+from django.urls import reverse
 from .models import Venta, DetalleVenta, CorteCaja
 from inventario.models import Sucursal, Producto, InventarioSucursal
 from usuarios.decoradores import rol_requerido, solo_activos
@@ -12,6 +13,7 @@ import json
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import mm
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from io import BytesIO
 
@@ -43,20 +45,57 @@ def reporte_ventas(request):
 @login_required(login_url='login')
 @rol_requerido('vendedor', 'cajero', 'admin')
 @solo_activos
+def api_estadisticas_hoy(request):
+    """API para obtener estadísticas del día actual"""
+    from datetime import date
+    sucursal_id = request.session.get('sucursal_id')
+    
+    hoy = date.today()
+    ventas_hoy = Venta.objects.filter(
+        sucursal_id=sucursal_id,
+        fecha__date=hoy
+    )
+    
+    total_ventas = ventas_hoy.count()
+    total_ingresos = ventas_hoy.aggregate(Sum('total'))['total__sum'] or 0
+    
+    # Contar productos únicos vendidos hoy
+    productos_vendidos = DetalleVenta.objects.filter(
+        venta__in=ventas_hoy
+    ).values('producto').distinct().count()
+    
+    return JsonResponse({
+        'total_ventas': total_ventas,
+        'total_ingresos': float(total_ingresos),
+        'productos_vendidos': productos_vendidos
+    })
+
+
+@login_required(login_url='login')
+@rol_requerido('vendedor', 'cajero', 'admin')
+@solo_activos
 def buscar_producto(request):
     """API para buscar productos por código de barras o descripción"""
     query = request.GET.get('q', '').strip()
     sucursal_id = request.session.get('sucursal_id')
     
-    if not query or len(query) < 2:
+    if not query:
         return JsonResponse({'productos': []})
-    
-    # Buscar por código de barras o nombre/descripción
+
+    # Buscar primero por código de barras exacto para el lector
     productos = Producto.objects.filter(
-        Q(codigo_barras__icontains=query) |
-        Q(nombre__icontains=query) |
-        Q(descripcion__icontains=query)
-    )[:20]
+        codigo_barras__iexact=query
+    )
+
+    if not productos.exists():
+        if len(query) < 2:
+            return JsonResponse({'productos': []})
+
+        productos = Producto.objects.filter(
+            Q(codigo_barras__icontains=query) |
+            Q(nombre__icontains=query) |
+            Q(descripcion__icontains=query)
+        )[:20]
     
     resultado = []
     for producto in productos:
@@ -314,12 +353,108 @@ def guardar_venta(request):
         return JsonResponse({
             'success': True,
             'venta_id': venta.id,
+            'recibo_url': reverse('generar_recibo_venta', args=[venta.id]),
             'mensaje': f'Venta #{venta.id} guardada exitosamente'
         })
     except ValueError as e:
         return JsonResponse({'error': str(e)}, status=400)
     except Exception:
         return JsonResponse({'error': 'Error interno al guardar la venta'}, status=400)
+
+
+@login_required(login_url='login')
+@rol_requerido('vendedor', 'cajero', 'admin')
+@solo_activos
+def generar_recibo_venta(request, venta_id):
+    """Generar recibo de venta en formato PDF para impresión térmica."""
+    try:
+        venta = Venta.objects.select_related('usuario', 'sucursal').get(id=venta_id, sucursal_id=request.session.get('sucursal_id'))
+    except Venta.DoesNotExist:
+        return HttpResponse('Venta no encontrada', status=404)
+
+    detalles = venta.detalles.select_related('producto').all()
+    buffer = BytesIO()
+    page_width = 80 * mm
+    page_height = 260 * mm
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=(page_width, page_height),
+        rightMargin=6,
+        leftMargin=6,
+        topMargin=10,
+        bottomMargin=10,
+    )
+
+    styles = getSampleStyleSheet()
+    elements = []
+
+    title_style = ParagraphStyle(
+        'TicketTitle',
+        parent=styles['Heading1'],
+        fontSize=14,
+        alignment=1,
+        spaceAfter=6,
+    )
+    normal_center = ParagraphStyle(
+        'NormalCenter',
+        parent=styles['Normal'],
+        alignment=1,
+        fontSize=8,
+        leading=10,
+    )
+    normal_left = ParagraphStyle(
+        'NormalLeft',
+        parent=styles['Normal'],
+        alignment=0,
+        fontSize=8,
+        leading=10,
+    )
+
+    elements.append(Paragraph('TICKET DE VENTA', title_style))
+    elements.append(Paragraph('PUNTO DE VENTA', normal_center))
+    elements.append(Paragraph('------------------------------', normal_center))
+    elements.append(Paragraph(f'Venta: {venta.id}', normal_left))
+    elements.append(Paragraph(f'Usuario: {venta.usuario.username if venta.usuario else "N/A"}', normal_left))
+    elements.append(Paragraph(f'Sucursal: {venta.sucursal.nombre}', normal_left))
+    elements.append(Paragraph(f'Fecha: {venta.fecha.strftime("%d/%m/%Y %H:%M")}', normal_left))
+    elements.append(Paragraph('------------------------------', normal_center))
+
+    table_data = [[
+        Paragraph('<b>C</b>', normal_left),
+        Paragraph('<b>Producto</b>', normal_left),
+        Paragraph('<b>P.U.</b>', normal_left),
+        Paragraph('<b>Total</b>', normal_left)
+    ]]
+
+    for detalle in detalles:
+        nombre = detalle.producto.nombre[:18]
+        table_data.append([
+            Paragraph(str(detalle.cantidad), normal_left),
+            Paragraph(nombre, normal_left),
+            Paragraph(f'${detalle.precio_unitario:.2f}', normal_left),
+            Paragraph(f'${detalle.subtotal:.2f}', normal_left)
+        ])
+
+    table = Table(table_data, colWidths=[10*mm, 34*mm, 18*mm, 18*mm])
+    table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
+        ('TOPPADDING', (0, 0), (-1, 0), 4),
+    ]))
+    elements.append(table)
+    elements.append(Paragraph('------------------------------', normal_center))
+    elements.append(Paragraph(f'TOTAL: ${venta.total:.2f}', ParagraphStyle('TotalStyle', parent=styles['Normal'], fontSize=10, alignment=1, leading=12)))
+    elements.append(Paragraph('Gracias por su compra', normal_center))
+    elements.append(Paragraph('------------------------------', normal_center))
+
+    doc.build(elements)
+    buffer.seek(0)
+
+    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="ticket_venta_{venta.id}.pdf"'
+    return response
 
 
 @login_required(login_url='login')
