@@ -1,0 +1,262 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionar Usuarios - Punto de Venta</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f6fa;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .navbar h1 {
+            font-size: 1.3rem;
+        }
+
+        .navbar-right {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .navbar a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h2 {
+            color: #333;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-small {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+        }
+
+        .btn-edit {
+            background: #28a745;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f8f9fa;
+            border-bottom: 2px solid #eee;
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: #f9f9f9;
+        }
+
+        td {
+            padding: 1rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .badge-admin {
+            background: #667eea;
+            color: white;
+        }
+
+        .badge-worker {
+            background: #28a745;
+            color: white;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #999;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .pagination {
+            text-align: center;
+            padding: 1.5rem;
+            background: #f8f9fa;
+        }
+
+        .search-box {
+            margin-bottom: 1.5rem;
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>👥 Gestionar Usuarios</h1>
+        <div class="navbar-right">
+            <a href="{% url 'admin_panel' %}">← Panel Admin</a>
+            <a href="{% url 'inicio' %}" style="background: #dc3545; padding: 0.5rem 1rem; border-radius: 5px;">Cerrar Sesión</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h2>Usuarios del Sistema</h2>
+            <a href="{% url 'crear_usuario' %}" class="btn">➕ Crear Usuario</a>
+        </div>
+
+        {% if usuarios %}
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Nombre Completo</th>
+                            <th>Email</th>
+                            <th>Tipo</th>
+                            <th>Fecha Creación</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for usuario in usuarios %}
+                            <tr>
+                                <td><strong>{{ usuario.username }}</strong></td>
+                                <td>{{ usuario.first_name|default:"N/A" }}</td>
+                                <td>{{ usuario.email|default:"N/A" }}</td>
+                                <td>
+                                    {% if usuario.is_superuser %}
+                                        <span class="badge badge-admin">Administrador</span>
+                                    {% else %}
+                                        <span class="badge badge-worker">Trabajador</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ usuario.date_joined|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    <div class="actions">
+                                        <a href="{% url 'editar_usuario' usuario.id %}" class="btn btn-small btn-edit">Editar</a>
+                                        <a href="{% url 'eliminar_usuario' usuario.id %}" class="btn btn-small btn-delete">Eliminar</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty">
+                <div class="empty-icon">📭</div>
+                <h3>No hay usuarios</h3>
+                <p>Crea el primer usuario <a href="{% url 'crear_usuario' %}">aquí</a></p>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,205 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Usuario - Punto de Venta</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 2.5rem;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .help-text {
+            font-size: 0.85rem;
+            color: #999;
+            margin-top: 0.3rem;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        input[type="checkbox"] {
+            width: auto;
+            cursor: pointer;
+        }
+
+        .checkbox-label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: normal;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        button,
+        a.btn {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        button[type="submit"] {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        button[type="submit"]:hover {
+            transform: scale(1.02);
+        }
+
+        a.btn-cancel {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        a.btn-cancel:hover {
+            background: #e0e0e0;
+            transform: scale(1.02);
+        }
+
+        .readonly {
+            background: #f9f9f9;
+            color: #666;
+        }
+
+        .info-box {
+            background: #f0f8ff;
+            border-left: 4px solid #667eea;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            color: #667eea;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✎ Editar Usuario</h1>
+            <p>Modifica los datos del usuario</p>
+        </div>
+
+        <div class="info-box">
+            Usuario: <strong>{{ usuario.username }}</strong>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="nombre_completo">Nombre Completo</label>
+                <input type="text" id="nombre_completo" name="nombre_completo" value="{{ usuario.first_name }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" value="{{ usuario.email }}">
+                <p class="help-text">Para recuperación de contraseña</p>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Nueva Contraseña (opcional)</label>
+                <input type="password" id="password" name="password" placeholder="Deja en blanco para no cambiar">
+                <p class="help-text">Si dejas vacío, se mantendrá la contraseña actual</p>
+            </div>
+
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="es_administrador" name="es_administrador" 
+                    {% if usuario.is_superuser %}checked{% endif %}>
+                <label for="es_administrador" class="checkbox-label">¿Es administrador?</label>
+            </div>
+            <p class="help-text">Si marcas esto, el usuario tendrá acceso al panel de administración</p>
+
+            <div class="btn-group">
+                <a href="{% url 'listar_usuarios' %}" class="btn-cancel">← Cancelar</a>
+                <button type="submit">Guardar Cambios ✓</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

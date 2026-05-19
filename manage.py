@@ -4,6 +4,15 @@ import os
 import sys
 
 
+import sys
+import os
+
+# Si corre como ejecutable sin consola, redirige stdout y stderr para evitar el crash
+if getattr(sys, 'frozen', False) and sys.stdout is None:
+    sys.stdout = open(os.devnull, 'w')
+    sys.stderr = open(os.devnull, 'w')
+
+
 def main():
     """Run administrative tasks."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')

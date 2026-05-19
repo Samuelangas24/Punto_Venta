@@ -10,11 +10,23 @@ class Sucursal(models.Model):
     def __str__(self):
         return self.nombre
 
+class Seccion(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+    descripcion = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        verbose_name = "Sección"
+        verbose_name_plural = "Secciones"
+    
+    def __str__(self):
+        return self.nombre
+
 class Producto(models.Model):
     codigo_barras = models.CharField(max_length=50, blank=True, null=True, unique=True)
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField(blank=True, null=True)
     precio_venta = models.DecimalField(max_digits=10, decimal_places=2)
+    seccion = models.ForeignKey(Seccion, on_delete=models.SET_NULL, null=True, blank=True, related_name='productos')
 
     def __str__(self):
         return f"{self.nombre} (${self.precio_venta})"

@@ -3,17 +3,25 @@ Django settings for core project.
 """
 
 import os
+import sys
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
+# ==============================================================================
+# CONFIGURACIÓN PARA EJECUTABLE (PROCESADO POR PYINSTALLER)
+# ==============================================================================
+# Si el proyecto corre desde el ejecutable congelado, usamos la ruta temporal de PyInstaller
+if getattr(sys, 'frozen', False):
+    # Usamos getattr para que VS Code no se queje del error visual
+    BASE_DIR = Path(getattr(sys, '_MEIPASS', os.path.dirname(sys.executable)))
+else:
+    BASE_DIR = Path(__file__).resolve().parent.parent
+# ==============================================================================
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-tu-secret-key-aqui'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -63,12 +71,15 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 
 
-# Database
-
+# Database - Conectado a tu servidor MySQL local
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'punto_de_venta',
+        'USER': 'root',
+        'PASSWORD': '12345',
+        'HOST': 'localhost',
+        'PORT': '3305',
     }
 }
 
@@ -95,7 +106,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'es-es'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Mexico_City'
 
 USE_I18N = True
 

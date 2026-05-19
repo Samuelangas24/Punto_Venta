@@ -1,0 +1,97 @@
+# INICIO RÁPIDO - Sistema Punto de Venta Local
+
+## 🚀 Inicia el Sistema en 2 Pasos
+
+### Paso 1: Abre PowerShell en esta carpeta
+```
+Clic derecho → Terminal en VS Code
+o
+Clic derecho en la carpeta → "Abrir en PowerShell"
+```
+
+### Paso 2: Ejecuta
+```powershell
+.\iniciar_sistema.ps1
+```
+
+---
+
+## ✅ Verás esto cuando esté listo:
+
+```
+================================
+Sistema Punto de Venta - Local
+================================
+
+✓ Conexión a MySQL exitosa
+Iniciando servidor Django...
+El sistema estará disponible en: http://127.0.0.1:8000/
+Presiona Ctrl+C para detener el servidor
+```
+
+---
+
+## 🌐 Abre en tu navegador:
+
+### Página de inicio:
+```
+http://127.0.0.1:8000/
+```
+
+### Iniciar sesión:
+```
+http://127.0.0.1:8000/login/
+```
+
+---
+
+## ⚙️ Primeras Credenciales (crear usuario)
+
+En otra ventana de PowerShell, ejecuta:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python manage.py createsuperuser
+```
+
+Luego ingresa:
+- Username: `admin`
+- Email: tu email
+- Password: tu contraseña
+
+---
+
+## 📊 Base de Datos
+
+- **Motor:** MySQL
+- **Host:** localhost
+- **Puerto:** 3305
+- **Usuario:** root
+- **Contraseña:** 12345
+- **Base de datos:** punto_de_venta
+
+---
+
+## ℹ️ Información Técnica
+
+- **Python:** 3.12
+- **Django:** 6.0.5
+- **MySQL:** Conector mysqlclient 2.2.8
+- **Acceso:** Solo desde este PC (127.0.0.1)
+- **Internet:** No requerido ✅
+
+---
+
+## 📖 Documentación Completa
+
+Ver archivo: `GUIA_SISTEMA_LOCAL.md`
+
+---
+
+## ❌ Detener el Sistema
+
+Presiona en PowerShell: `Ctrl + C`
+
+---
+
+**¡Listo! El sistema está funcionando completamente sin internet y con MySQL** 🎉

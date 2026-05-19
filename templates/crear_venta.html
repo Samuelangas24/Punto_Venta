@@ -320,6 +320,76 @@
             display: block;
         }
 
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            width: 100%;
+            max-width: 420px;
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+            position: relative;
+        }
+
+        .modal h3 {
+            margin-bottom: 16px;
+            color: #333;
+        }
+
+        .modal label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 1em;
+        }
+
+        .modal .modal-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .modal .modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal .btn-primary,
+        .modal .btn-secondary {
+            width: 100%;
+        }
+
+        .modal .change-value {
+            font-size: 1.55em;
+            color: #1a73e8;
+            font-weight: 700;
+            margin-top: 6px;
+        }
+
         .search-tabs {
             display: flex;
             gap: 10px;
@@ -425,7 +495,7 @@
 
                 <div class="btn-group">
                     <button class="btn btn-secondary" onclick="limpiarCarrito()">Limpiar</button>
-                    <button class="btn btn-primary" onclick="cobrar()">Cobrar</button>
+                    <button class="btn btn-primary" onclick="mostrarModalPago()">Cobrar</button>
                 </div>
             </div>
 
@@ -441,9 +511,42 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="modalPago">
+        <div class="modal">
+            <h3>💵 Pago</h3>
+            <label for="montoPagado">Con cuánto paga</label>
+            <input type="number" id="montoPagado" min="0" step="0.01" placeholder="Ingrese monto entregado" autocomplete="off">
+            <div class="modal-row">
+                <div>
+                    <label>Total a pagar</label>
+                    <div class="change-value" id="modalTotal">$0.00</div>
+                </div>
+                <div>
+                    <label>Cambio</label>
+                    <div class="change-value" id="modalCambio">$0.00</div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" type="button" onclick="cerrarModalPago()">Cancelar</button>
+                <button class="btn btn-primary" type="button" onclick="confirmarPago()">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const carrito = {};
         const baseURL = "{% url 'buscar_producto' %}";
+        const montoPagadoInput = document.getElementById('montoPagado');
+
+        if (montoPagadoInput) {
+            montoPagadoInput.addEventListener('input', actualizarCambio);
+            montoPagadoInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    confirmarPago();
+                }
+            });
+        }
 
         // Buscar por código de barras (automático)
         document.getElementById('codigo_barras').addEventListener('keypress', function(e) {
@@ -645,7 +748,11 @@
             return errores;
         }
 
-        function cobrar() {
+        function calcularTotal() {
+            return Object.values(carrito).reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+        }
+
+        function mostrarModalPago() {
             if (Object.keys(carrito).length === 0) {
                 mostrarMensaje('El carrito está vacío', 'error');
                 return;
@@ -657,17 +764,49 @@
                 return;
             }
 
+            const total = calcularTotal();
+            document.getElementById('modalTotal').textContent = `$${total.toFixed(2)}`;
+            document.getElementById('montoPagado').value = total.toFixed(2);
+            document.getElementById('modalCambio').textContent = '$0.00';
+            document.getElementById('modalPago').classList.add('active');
+            document.getElementById('montoPagado').focus();
+            actualizarCambio();
+        }
+
+        function cerrarModalPago() {
+            document.getElementById('modalPago').classList.remove('active');
+        }
+
+        function actualizarCambio() {
+            const total = calcularTotal();
+            const montoPagado = parseFloat(document.getElementById('montoPagado').value) || 0;
+            const cambio = montoPagado - total;
+            document.getElementById('modalCambio').textContent = `$${cambio >= 0 ? cambio.toFixed(2) : '0.00'}`;
+        }
+
+        function confirmarPago() {
+            const total = calcularTotal();
+            const montoPagado = parseFloat(document.getElementById('montoPagado').value);
+
+            if (isNaN(montoPagado) || montoPagado < total) {
+                mostrarMensaje('El pago debe ser igual o mayor al total', 'error');
+                return;
+            }
+
+            procesarCobro(total, montoPagado);
+        }
+
+        function procesarCobro(total, montoPagado) {
             const detalles = Object.entries(carrito).map(([productoId, item]) => ({
                 producto_id: parseInt(productoId),
                 cantidad: item.cantidad,
                 precio_unitario: item.precio
             }));
 
-            const total = Object.values(carrito).reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
-
             const payload = {
                 detalles: detalles,
-                total: total
+                total: total,
+                monto_pagado: montoPagado
             };
 
             fetch("{% url 'guardar_venta' %}", {
@@ -682,6 +821,7 @@
             .then(data => {
                 if (data.success) {
                     mostrarMensaje(`✓ ${data.mensaje}`, 'success');
+                    cerrarModalPago();
                     Object.keys(carrito).forEach(key => delete carrito[key]);
                     actualizarCarrito();
                     if (data.recibo_url) {
@@ -698,6 +838,10 @@
                 console.error('Error:', error);
                 mostrarMensaje('Error al procesar la venta', 'error');
             });
+        }
+
+        function cobrar() {
+            mostrarModalPago();
         }
 
         function mostrarMensaje(texto, tipo) {

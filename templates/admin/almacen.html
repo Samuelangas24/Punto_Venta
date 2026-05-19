@@ -337,6 +337,14 @@
                 <label for="descripcion_anadir"><strong>Descripción</strong></label>
                 <textarea id="descripcion_anadir" rows="3" placeholder="Descripción del producto (opcional)"></textarea>
 
+                <label for="seccion_anadir"><strong>📂 Sección</strong></label>
+                <select id="seccion_anadir">
+                    <option value="">-- Selecciona una sección --</option>
+                    {% for seccion in secciones %}
+                        <option value="{{ seccion.id }}">{{ seccion.nombre }}</option>
+                    {% endfor %}
+                </select>
+
                 <div class="grid-2">
                     <div>
                         <label for="precio_anadir"><strong>💵 Precio de Venta</strong></label>
@@ -554,6 +562,7 @@
             const descripcion = document.getElementById('descripcion_anadir').value.trim();
             const precio = document.getElementById('precio_anadir').value;
             const cantidad = document.getElementById('cantidad_anadir').value;
+            const seccionId = document.getElementById('seccion_anadir').value;
 
             if (!sucursalId) {
                 mostrarMensaje('Selecciona una sucursal primero.', 'error');
@@ -576,7 +585,8 @@
                     nombre: nombre,
                     descripcion: descripcion,
                     precio: precio,
-                    cantidad: cantidad
+                    cantidad: cantidad,
+                    seccion_id: seccionId
                 })
             })
             .then(response => response.json())
@@ -595,6 +605,7 @@
             document.getElementById('codigo_anadir').value = '';
             document.getElementById('nombre_anadir').value = '';
             document.getElementById('descripcion_anadir').value = '';
+            document.getElementById('seccion_anadir').value = '';
             document.getElementById('precio_anadir').value = '';
             document.getElementById('cantidad_anadir').value = 1;
             currentProductId = null;

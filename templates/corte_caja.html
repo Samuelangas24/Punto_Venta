@@ -1,3 +1,4 @@
+{% load tz %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -15,18 +16,18 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f6fa;
             padding: 20px;
+            margin-top: 80px; /* Corregido para evitar solapamiento con navbar fija */
         }
 
         .navbar {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 1rem 0;
+            padding: 1rem 20px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             position: fixed;
             top: 0;
-            width: 100%;
+            left: 0;
+            right: 0;
             z-index: 100;
-            margin: -20px -20px 0 -20px;
-            padding: 1rem 20px;
         }
 
         .navbar-content {
@@ -41,10 +42,6 @@
         .navbar-brand {
             font-size: 1.3em;
             font-weight: bold;
-        }
-
-        body {
-            margin-top: 70px;
         }
 
         .container {
@@ -133,6 +130,7 @@
             display: flex;
             gap: 10px;
             margin-top: 20px;
+            flex-wrap: wrap;
         }
 
         .btn {
@@ -173,15 +171,6 @@
 
         .btn-success:hover {
             background: #218838;
-        }
-
-        .btn-pdf {
-            background: #dc3545;
-            color: white;
-        }
-
-        .btn-pdf:hover {
-            background: #c82333;
         }
 
         .status-badge {
@@ -316,10 +305,6 @@
                 gap: 15px;
                 align-items: flex-start;
             }
-
-            body {
-                margin-top: 80px;
-            }
         }
     </style>
 </head>
@@ -339,12 +324,12 @@
 
         <div class="header">
             <h1>💰 Corte de Caja</h1>
+            <p class="greeting">Hola {{ usuario_nombre }}, bienvenido al corte de caja.</p>
             <a href="{% url 'punto_de_venta' %}" class="back-link">← Volver al Dashboard</a>
         </div>
 
         {% if corte_abierto %}
             <div class="grid">
-                <!-- Información del corte -->
                 <div class="card">
                     <h2>📋 Información del Corte</h2>
                     <div class="info-box">
@@ -355,15 +340,18 @@
                     </div>
                     <div class="info-box">
                         <div class="info-label">Apertura</div>
-                        <div class="info-value">{{ corte_abierto.fecha_apertura|date:"d/m/Y H:i" }}</div>
+                        <div class="info-value">{{ corte_abierto.fecha_apertura|localtime|date:"d/m/Y H:i" }}</div>
                     </div>
                     <div class="info-box">
                         <div class="info-label">Monto Inicial</div>
-                        <div class="info-value">${{ corte_abierto.monto_inicial }}</div>
+                        <div class="info-value">${{ corte_abierto.monto_inicial|floatformat:2 }}</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-label">Usuario en turno</div>
+                        <div class="info-value">{{ corte_abierto.usuario.username }}</div>
                     </div>
                 </div>
 
-                <!-- Resumen de ventas -->
                 <div class="card">
                     <h2>📊 Resumen de Ventas</h2>
                     <div class="resumen-grid">
@@ -373,16 +361,15 @@
                         </div>
                         <div class="resumen-card">
                             <div class="resumen-label">Monto Total</div>
-                            <div class="resumen-value">${{ total_ventas }}</div>
+                            <div class="resumen-value">${{ total_ventas|floatformat:2 }}</div>
                         </div>
                     </div>
                     <div class="info-box">
                         <div class="info-label">Total a Cobrar</div>
-                        <div class="info-value">${{ corte_abierto.monto_inicial|add:total_ventas }}</div>
+                        <div class="info-value">${{ corte_abierto.monto_inicial|add:total_ventas|floatformat:2 }}</div>
                     </div>
                 </div>
 
-                <!-- Cerrar Corte -->
                 <div class="card table-section">
                     <h2>✅ Cerrar Corte</h2>
                     <form id="closeForm">
@@ -391,13 +378,12 @@
                             <textarea id="notas" placeholder="Agregar observaciones del corte..."></textarea>
                         </div>
                         <div class="button-group">
-                            <button type="button" class="btn btn-secondary" onclick="abrirCorte()">Nuevo Corte</button>
-                            <button type="button" class="btn btn-success" onclick="cerrarCorte()">Cerrar Corte</button>
+                            <button type="button" class="btn btn-primary" onclick="imprimirCorte()">Imprimir Corte de Caja</button>
+                            <button type="button" class="btn btn-success" onclick="cerrarCorte()">Generar Corte de Caja</button>
                         </div>
                     </form>
                 </div>
 
-                <!-- Tabla de ventas -->
                 <div class="card table-section">
                     <h2>📜 Detalle de Ventas</h2>
                     {% if ventas_corte %}
@@ -414,9 +400,9 @@
                                 {% for venta in ventas_corte %}
                                     <tr>
                                         <td>#{{ venta.id }}</td>
-                                        <td>{{ venta.fecha|date:"H:i:s" }}</td>
+                                        <td>{{ venta.fecha|localtime|date:"H:i:s" }}</td>
                                         <td>{{ venta.usuario.username }}</td>
-                                        <td>${{ venta.total }}</td>
+                                        <td>${{ venta.total|floatformat:2 }}</td>
                                     </tr>
                                 {% endfor %}
                             </tbody>
@@ -443,9 +429,13 @@
     </div>
 
     <script>
+        // Inyección segura del ID de corte evitando errores de sintaxis en JS
+        const CORTE_ID = "{{ corte_abierto.id|default:'' }}" || null;
+
+
         function abrirCorte() {
-            const montoInicial = document.getElementById('montoInicial') ? 
-                parseFloat(document.getElementById('montoInicial').value) : 0;
+            const montoInput = document.getElementById('montoInicial');
+            const montoInicial = montoInput ? parseFloat(montoInput.value) : 0;
             
             if (montoInicial < 0) {
                 mostrarMensaje('El monto inicial no puede ser negativo', 'error');
@@ -478,12 +468,17 @@
         }
 
         function cerrarCorte() {
+            if (!CORTE_ID) {
+                mostrarMensaje('No se encontró un corte abierto para cerrar.', 'error');
+                return;
+            }
+
             if (!confirm('¿Estás seguro de que deseas cerrar el corte?')) {
                 return;
             }
 
-            const corteId = {{ corte_abierto.id }};
-            const notas = document.getElementById('notas').value;
+            const notasElement = document.getElementById('notas');
+            const notas = notasElement ? notasElement.value : '';
 
             fetch("{% url 'cerrar_corte' %}", {
                 method: 'POST',
@@ -492,7 +487,7 @@
                     'X-CSRFToken': '{{ csrf_token }}'
                 },
                 body: JSON.stringify({
-                    corte_id: corteId,
+                    corte_id: CORTE_ID,
                     notas: notas
                 })
             })
@@ -503,6 +498,7 @@
                     setTimeout(() => {
                         const pdfUrl = `{% url 'generar_pdf_corte' 0 %}`.replace('0', data.corte_id);
                         window.open(pdfUrl, '_blank');
+                        location.reload(); 
                     }, 2000);
                 } else {
                     mostrarMensaje(data.error || 'Error al cerrar corte', 'error');
@@ -514,14 +510,25 @@
             });
         }
 
+        function imprimirCorte() {
+            if (!CORTE_ID) {
+                mostrarMensaje('No hay corte abierto para imprimir.', 'error');
+                return;
+            }
+            const pdfUrl = `{% url 'generar_pdf_corte' 0 %}`.replace('0', CORTE_ID);
+            window.open(pdfUrl, '_blank');
+        }
+
         function mostrarMensaje(texto, tipo) {
             const msg = document.getElementById('message');
-            msg.textContent = texto;
-            msg.className = `message ${tipo}`;
-            
-            setTimeout(() => {
-                msg.className = 'message';
-            }, 4000);
+            if (msg) {
+                msg.textContent = texto;
+                msg.className = `message ${tipo}`;
+                
+                setTimeout(() => {
+                    msg.className = 'message';
+                }, 4000);
+            }
         }
     </script>
 </body>

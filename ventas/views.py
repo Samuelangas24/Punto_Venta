@@ -3,10 +3,11 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
 from django.db import transaction
 from django.db.models import Sum, Q
+from datetime import datetime
 from django.utils import timezone
 from django.urls import reverse
 from .models import Venta, DetalleVenta, CorteCaja
-from inventario.models import Sucursal, Producto, InventarioSucursal
+from inventario.models import Sucursal, Producto, InventarioSucursal, Seccion
 from usuarios.decoradores import rol_requerido, solo_activos
 from decimal import Decimal, InvalidOperation
 import json
@@ -29,7 +30,12 @@ def reporte_ventas(request):
     ventas = Venta.objects.all()
     
     if fecha_inicio and fecha_fin:
-        ventas = ventas.filter(fecha__range=[fecha_inicio, fecha_fin])
+        try:
+            fecha_inicio_date = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+            fecha_fin_date = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+            ventas = ventas.filter(fecha__date__range=[fecha_inicio_date, fecha_fin_date])
+        except ValueError:
+            pass
     
     if sucursal_id:
         ventas = ventas.filter(sucursal_id=sucursal_id)
@@ -38,7 +44,9 @@ def reporte_ventas(request):
 
     return render(request, 'admin/reporte.html', {
         'ventas': ventas,
-        'total_generado': total_generado
+        'total_generado': total_generado,
+        'fecha_inicio': fecha_inicio,
+        'fecha_fin': fecha_fin,
     })
 
 
@@ -145,6 +153,7 @@ def crear_venta_page(request):
 def almacen_admin(request):
     """Administración de productos y sucursales desde el almacén."""
     sucursales = Sucursal.objects.all().order_by('nombre')
+    secciones = Seccion.objects.all().order_by('nombre')
     sucursal_id = request.GET.get('sucursal')
     sucursal_seleccionada = None
     inventario = []
@@ -158,6 +167,7 @@ def almacen_admin(request):
 
     return render(request, 'admin/almacen.html', {
         'sucursales': sucursales,
+        'secciones': secciones,
         'sucursal_seleccionada': sucursal_seleccionada,
         'inventario': inventario,
         'usuario': request.user.username,
@@ -218,6 +228,7 @@ def guardar_producto_almacen(request):
         descripcion = str(data.get('descripcion', '')).strip()
         cantidad = int(data.get('cantidad', 0))
         precio = Decimal(str(data.get('precio', 0)))
+        seccion_id = data.get('seccion_id')
 
         if not sucursal_id or not codigo_barras or not nombre or cantidad < 0 or precio <= 0:
             return JsonResponse({'error': 'Datos incompletos o inválidos'}, status=400)
@@ -231,13 +242,27 @@ def guardar_producto_almacen(request):
             producto.nombre = nombre
             producto.descripcion = descripcion
             producto.precio_venta = precio
+            if seccion_id:
+                try:
+                    seccion = Seccion.objects.get(id=seccion_id)
+                    producto.seccion = seccion
+                except Seccion.DoesNotExist:
+                    pass
             producto.save()
         else:
+            seccion = None
+            if seccion_id:
+                try:
+                    seccion = Seccion.objects.get(id=seccion_id)
+                except Seccion.DoesNotExist:
+                    pass
+            
             producto = Producto.objects.create(
                 codigo_barras=codigo_barras,
                 nombre=nombre,
                 descripcion=descripcion,
-                precio_venta=precio
+                precio_venta=precio,
+                seccion=seccion
             )
 
         inventario = InventarioSucursal.objects.filter(
@@ -297,10 +322,15 @@ def guardar_venta(request):
         detalles = data.get('detalles', [])
         try:
             total = Decimal(str(data.get('total', 0)))
+            monto_pagado = Decimal(str(data.get('monto_pagado', 0)))
         except (InvalidOperation, TypeError, ValueError):
-            return JsonResponse({'error': 'Total inválido'}, status=400)
+            return JsonResponse({'error': 'Total o pago inválido'}, status=400)
         
         sucursal_id = request.session.get('sucursal_id')
+        cambio = monto_pagado - total
+
+        if monto_pagado < total:
+            return JsonResponse({'error': 'El monto pagado debe ser igual o mayor al total'}, status=400)
         
         if not sucursal_id or not detalles or total <= 0:
             return JsonResponse({'error': 'Datos incompletos'}, status=400)
@@ -309,7 +339,9 @@ def guardar_venta(request):
             venta = Venta.objects.create(
                 sucursal_id=sucursal_id,
                 usuario=request.user,
-                total=total
+                total=total,
+                monto_pagado=monto_pagado,
+                cambio=cambio
             )
             
             for detalle in detalles:
@@ -353,8 +385,10 @@ def guardar_venta(request):
         return JsonResponse({
             'success': True,
             'venta_id': venta.id,
-            'recibo_url': reverse('generar_recibo_venta', args=[venta.id]),
-            'mensaje': f'Venta #{venta.id} guardada exitosamente'
+            'recibo_url': reverse('generar_recibo_venta_html', args=[venta.id]),
+            'mensaje': f'Venta #{venta.id} guardada exitosamente',
+            'monto_pagado': float(monto_pagado),
+            'cambio': float(cambio)
         })
     except ValueError as e:
         return JsonResponse({'error': str(e)}, status=400)
@@ -445,6 +479,9 @@ def generar_recibo_venta(request, venta_id):
     ]))
     elements.append(table)
     elements.append(Paragraph('------------------------------', normal_center))
+    elements.append(Paragraph(f'Monto pagado: ${venta.monto_pagado:.2f}', normal_left))
+    elements.append(Paragraph(f'Cambio: ${venta.cambio:.2f}', normal_left))
+    elements.append(Paragraph('------------------------------', normal_center))
     elements.append(Paragraph(f'TOTAL: ${venta.total:.2f}', ParagraphStyle('TotalStyle', parent=styles['Normal'], fontSize=10, alignment=1, leading=12)))
     elements.append(Paragraph('Gracias por su compra', normal_center))
     elements.append(Paragraph('------------------------------', normal_center))
@@ -458,7 +495,24 @@ def generar_recibo_venta(request, venta_id):
 
 
 @login_required(login_url='login')
-@rol_requerido('cajero', 'admin')
+@rol_requerido('vendedor', 'cajero', 'admin')
+@solo_activos
+def generar_recibo_venta_html(request, venta_id):
+    """Generar recibo de venta en HTML y disparar impresión automática."""
+    try:
+        venta = Venta.objects.select_related('usuario', 'sucursal').get(id=venta_id, sucursal_id=request.session.get('sucursal_id'))
+    except Venta.DoesNotExist:
+        return HttpResponse('Venta no encontrada', status=404)
+
+    detalles = venta.detalles.select_related('producto').all()
+    return render(request, 'recibo_venta.html', {
+        'venta': venta,
+        'detalles': detalles,
+    })
+
+
+@login_required(login_url='login')
+@rol_requerido('vendedor', 'cajero', 'admin')
 @solo_activos
 def corte_caja(request):
     """Vista para realizar corte de caja"""
@@ -474,14 +528,43 @@ def corte_caja(request):
     # Obtener ventas del corte actual
     ventas_corte = []
     total_ventas = 0
+    corte_apertura = None
     
     if corte_abierto:
+        apertura_corte = corte_abierto.fecha_apertura
+        ultimo_corte_cerrado = CorteCaja.objects.filter(
+            sucursal_id=sucursal_id,
+            usuario=request.user,
+            estado='cerrado'
+        ).order_by('-fecha_cierre').first()
+
+        if ultimo_corte_cerrado:
+            ventas_anteriores = Venta.objects.filter(
+                sucursal_id=sucursal_id,
+                usuario=request.user,
+                fecha__gt=ultimo_corte_cerrado.fecha_cierre,
+                fecha__lt=corte_abierto.fecha_apertura
+            ).order_by('fecha')
+        else:
+            ventas_anteriores = Venta.objects.filter(
+                sucursal_id=sucursal_id,
+                usuario=request.user,
+                fecha__lt=corte_abierto.fecha_apertura
+            ).order_by('fecha')
+
+        if ventas_anteriores.exists():
+            apertura_corte = ventas_anteriores.first().fecha
+        else:
+            apertura_corte = corte_abierto.fecha_apertura
+
         ventas_corte = Venta.objects.filter(
             sucursal_id=sucursal_id,
-            fecha__gte=corte_abierto.fecha_apertura,
+            usuario=request.user,
+            fecha__gte=apertura_corte,
             fecha__lte=timezone.now()
-        )
+        ).order_by('-fecha')
         total_ventas = ventas_corte.aggregate(Sum('total'))['total__sum'] or 0
+        corte_apertura = apertura_corte
     
     context = {
         'corte_abierto': corte_abierto,
@@ -489,13 +572,14 @@ def corte_caja(request):
         'total_ventas': total_ventas,
         'sucursal': request.session.get('sucursal_nombre'),
         'usuario': request.user.username,
+        'usuario_nombre': request.user.get_full_name() or request.user.username,
     }
     
     return render(request, 'corte_caja.html', context)
 
 
 @login_required(login_url='login')
-@rol_requerido('cajero', 'admin')
+@rol_requerido('vendedor', 'cajero', 'admin')
 @solo_activos
 def abrir_corte(request):
     """Abrir nuevo corte de caja"""
@@ -513,11 +597,34 @@ def abrir_corte(request):
             usuario=request.user,
             estado='abierto'
         ).update(estado='cerrado', fecha_cierre=timezone.now())
+
+        apertura = timezone.now()
+        ultimo_corte_cerrado = CorteCaja.objects.filter(
+            sucursal_id=sucursal_id,
+            usuario=request.user,
+            estado='cerrado'
+        ).order_by('-fecha_cierre').first()
+
+        if ultimo_corte_cerrado:
+            primera_venta_posterior = Venta.objects.filter(
+                sucursal_id=sucursal_id,
+                usuario=request.user,
+                fecha__gt=ultimo_corte_cerrado.fecha_cierre
+            ).order_by('fecha').first()
+        else:
+            primera_venta_posterior = Venta.objects.filter(
+                sucursal_id=sucursal_id,
+                usuario=request.user
+            ).order_by('fecha').first()
+
+        if primera_venta_posterior:
+            apertura = primera_venta_posterior.fecha
         
         # Crear nuevo corte
         corte = CorteCaja.objects.create(
             sucursal_id=sucursal_id,
             usuario=request.user,
+            fecha_apertura=apertura,
             monto_inicial=monto_inicial,
             estado='abierto'
         )
@@ -533,7 +640,7 @@ def abrir_corte(request):
 
 
 @login_required(login_url='login')
-@rol_requerido('cajero', 'admin')
+@rol_requerido('vendedor', 'cajero', 'admin')
 @solo_activos
 def cerrar_corte(request):
     """Cerrar corte de caja"""
@@ -550,6 +657,7 @@ def cerrar_corte(request):
         # Calcular total de ventas
         ventas = Venta.objects.filter(
             sucursal_id=corte.sucursal_id,
+            usuario=request.user,
             fecha__gte=corte.fecha_apertura,
             fecha__lte=timezone.now()
         )
@@ -573,7 +681,7 @@ def cerrar_corte(request):
 
 
 @login_required(login_url='login')
-@rol_requerido('cajero', 'admin')
+@rol_requerido('vendedor', 'cajero', 'admin')
 @solo_activos
 def generar_pdf_corte(request, corte_id):
     """Generar PDF del corte de caja"""
@@ -585,6 +693,7 @@ def generar_pdf_corte(request, corte_id):
     # Obtener ventas del corte
     ventas = Venta.objects.filter(
         sucursal_id=corte.sucursal_id,
+        usuario=request.user,
         fecha__gte=corte.fecha_apertura,
         fecha__lte=corte.fecha_cierre or timezone.now()
     )
@@ -704,19 +813,152 @@ def generar_pdf_corte(request, corte_id):
 def consultar_inventario(request):
     """Consultar disponibilidad de productos en existencia"""
     sucursal_id = request.session.get('sucursal_id')
+    seccion_id = request.GET.get('seccion')
     
-    # Obtener todo el inventario de la sucursal
+    # Obtener todas las secciones
+    from inventario.models import Seccion
+    secciones = Seccion.objects.all().order_by('nombre')
+    
+    # Obtener inventario
     inventario = InventarioSucursal.objects.filter(
         sucursal_id=sucursal_id
-    ).select_related('producto').order_by('producto__nombre')
+    ).select_related('producto', 'producto__seccion').order_by('producto__nombre')
+    
+    # Filtrar por sección si se especifica
+    if seccion_id:
+        inventario = inventario.filter(producto__seccion_id=seccion_id)
     
     context = {
         'inventario': inventario,
+        'secciones': secciones,
+        'seccion_seleccionada': int(seccion_id) if seccion_id else None,
         'sucursal': request.session.get('sucursal_nombre'),
         'usuario': request.user.username,
     }
     
     return render(request, 'consultar_inventario.html', context)
+
+
+@login_required(login_url='login')
+@rol_requerido('vendedor', 'cajero', 'admin')
+@solo_activos
+def imprimir_seccion_inventario(request, seccion_id):
+    """Generar PDF de inventario por sección para impresora térmica (80mm)"""
+    sucursal_id = request.session.get('sucursal_id')
+    
+    try:
+        seccion = Seccion.objects.get(id=seccion_id)
+    except Seccion.DoesNotExist:
+        return HttpResponse('Sección no encontrada', status=404)
+    
+    # Obtener inventario de la sección
+    inventario = InventarioSucursal.objects.filter(
+        sucursal_id=sucursal_id,
+        producto__seccion=seccion,
+        cantidad__gt=0
+    ).select_related('producto').order_by('producto__nombre')
+    
+    # Crear PDF para impresora térmica (80mm de ancho)
+    buffer = BytesIO()
+    page_width = 80 * mm
+    page_height = 200 * mm
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=(page_width, page_height),
+        rightMargin=4,
+        leftMargin=4,
+        topMargin=8,
+        bottomMargin=8,
+    )
+    
+    styles = getSampleStyleSheet()
+    elements = []
+    
+    # Estilos para thermal printer
+    title_style = ParagraphStyle(
+        'TicketTitle',
+        parent=styles['Heading1'],
+        fontSize=12,
+        alignment=1,
+        spaceAfter=4,
+        fontName='Helvetica-Bold'
+    )
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        fontSize=9,
+        alignment=1,
+        spaceAfter=3,
+    )
+    normal_style = ParagraphStyle(
+        'Normal',
+        parent=styles['Normal'],
+        fontSize=8,
+        leading=8,
+        alignment=0,
+    )
+    
+    # Encabezado
+    elements.append(Paragraph('INVENTARIO', title_style))
+    elements.append(Paragraph(f'SECCIÓN: {seccion.nombre}', subtitle_style))
+    elements.append(Paragraph(f'Sucursal: {request.session.get("sucursal_nombre")}', normal_style))
+    from datetime import datetime
+    elements.append(Paragraph(f'Fecha: {datetime.now().strftime("%d/%m/%Y %H:%M")}', normal_style))
+    elements.append(Paragraph('─' * 30, subtitle_style))
+    
+    # Tabla de productos
+    table_data = [[
+        Paragraph('<b>Cant</b>', normal_style),
+        Paragraph('<b>Producto</b>', normal_style),
+        Paragraph('<b>Precio</b>', normal_style)
+    ]]
+    
+    total_productos = 0
+    for item in inventario:
+        nombre_corto = item.producto.nombre[:16]
+        table_data.append([
+            Paragraph(str(item.cantidad), normal_style),
+            Paragraph(nombre_corto, normal_style),
+            Paragraph(f'${item.producto.precio_venta:.2f}', normal_style)
+        ])
+        total_productos += item.cantidad
+    
+    if not inventario.exists():
+        table_data.append([
+            Paragraph('', normal_style),
+            Paragraph('Sin productos', normal_style),
+            Paragraph('', normal_style)
+        ])
+    
+    table = Table(table_data, colWidths=[12*mm, 40*mm, 18*mm])
+    table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 3),
+        ('TOPPADDING', (0, 0), (-1, 0), 3),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+    ]))
+    elements.append(table)
+    elements.append(Paragraph('─' * 30, subtitle_style))
+    
+    # Totales
+    elements.append(Paragraph(f'Total de artículos: {total_productos}', ParagraphStyle(
+        'Total',
+        parent=styles['Normal'],
+        fontSize=8,
+        alignment=1,
+        fontName='Helvetica-Bold',
+        leading=8
+    )))
+    
+    # Construir PDF
+    doc.build(elements)
+    buffer.seek(0)
+    
+    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="inventario_{seccion.nombre}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf"'
+    return response
 
 
 @login_required(login_url='login')

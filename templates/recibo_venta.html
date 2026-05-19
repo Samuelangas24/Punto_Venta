@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recibo de Venta #{{ venta.id }}</title>
+    <style>
+        @page {
+            size: auto;
+            margin: 0;
+        }
+
+        html, body {
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background: white;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #222;
+        }
+
+        .ticket {
+            width: 320px;
+            margin: 0 auto;
+            padding: 12px 12px 8px;
+        }
+
+        h1, h2, h3 {
+            text-align: center;
+            margin: 4px 0;
+        }
+
+        .info, .items, .totals {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .info p, .totals p {
+            margin: 4px 0;
+            font-size: 0.95em;
+        }
+
+        .items table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .items th, .items td {
+            padding: 6px 0;
+            font-size: 0.92em;
+        }
+
+        .items th {
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .items td {
+            vertical-align: top;
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .separator {
+            border-top: 1px dashed #999;
+            margin: 12px 0;
+        }
+
+        .footer {
+            margin-top: 12px;
+            text-align: center;
+            font-size: 0.92em;
+            padding-bottom: 8px;
+        }
+
+        @media print {
+            body, html {
+                margin: 0;
+                padding: 0;
+            }
+            .ticket {
+                width: 320px;
+                margin: 0;
+                padding: 8px 8px 4px;
+            }
+            .separator {
+                margin: 8px 0;
+            }
+            .items table {
+                margin-top: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="ticket">
+        <h1 style="font-size: 1.6em; letter-spacing: 0.03em;">la tiendita el chino</h1>
+        <h2 style="font-size: 1em; font-weight: 400; margin-bottom: 12px;">agradecemos su preferencia</h2>
+        <h3 style="font-size: 1em; margin-bottom: 12px;">Recibo #{{ venta.id }}</h3>
+        <div class="info">
+            <p><strong>Usuario:</strong> {{ venta.usuario.username }}</p>
+            <p><strong>Sucursal:</strong> {{ venta.sucursal.nombre }}</p>
+            <p><strong>Fecha:</strong> {{ venta.fecha|date:'d/m/Y H:i' }}</p>
+        </div>
+
+        <div class="separator"></div>
+
+        <div class="items">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cant</th>
+                        <th>Producto</th>
+                        <th class="right">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detalle in detalles %}
+                        <tr>
+                            <td>{{ detalle.cantidad }}</td>
+                            <td>{{ detalle.producto.nombre|slice:":18" }}</td>
+                            <td class="right">${{ detalle.subtotal|floatformat:2 }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="separator"></div>
+
+        <div class="totals">
+            <p><strong>Total:</strong> ${{ venta.total|floatformat:2 }}</p>
+            <p><strong>Recibido:</strong> ${{ venta.monto_pagado|floatformat:2 }}</p>
+            <p><strong>Cambio:</strong> ${{ venta.cambio|floatformat:2 }}</p>
+        </div>
+
+        <div class="separator"></div>
+
+        <div class="footer">
+            <p>Gracias por su compra.</p>
+            <p>Imprima este ticket.</p>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            window.print();
+        };
+
+        window.onafterprint = function() {
+            window.close();
+        };
+    </script>
+</body>
+</html>

@@ -1,8 +1,8 @@
 from django.urls import path
 from .views import (
     reporte_ventas, buscar_producto, crear_venta_page, guardar_venta,
-    generar_recibo_venta, api_estadisticas_hoy, corte_caja, abrir_corte, cerrar_corte, generar_pdf_corte,
-    consultar_inventario, api_inventario,
+    generar_recibo_venta, generar_recibo_venta_html, api_estadisticas_hoy, corte_caja, abrir_corte, cerrar_corte, generar_pdf_corte,
+    consultar_inventario, api_inventario, imprimir_seccion_inventario,
     almacen_admin, api_almacen_buscar, guardar_producto_almacen, eliminar_producto_almacen,
     actualizar_cantidad_almacen, actualizar_precio_almacen, actualizar_descripcion_almacen
 )
@@ -17,9 +17,11 @@ urlpatterns = [
     path('corte/abrir/', abrir_corte, name='abrir_corte'),
     path('corte/cerrar/', cerrar_corte, name='cerrar_corte'),
     path('recibo/<int:venta_id>/', generar_recibo_venta, name='generar_recibo_venta'),
+    path('recibo-html/<int:venta_id>/', generar_recibo_venta_html, name='generar_recibo_venta_html'),
     path('corte/pdf/<int:corte_id>/', generar_pdf_corte, name='generar_pdf_corte'),
     path('inventario/', consultar_inventario, name='consultar_inventario'),
     path('inventario/buscar/', api_inventario, name='api_inventario'),
+    path('inventario/imprimir/<int:seccion_id>/', imprimir_seccion_inventario, name='imprimir_seccion'),
     path('almacen/', almacen_admin, name='almacen_admin'),
     path('almacen/buscar/', api_almacen_buscar, name='api_almacen_buscar'),
     path('almacen/guardar/', guardar_producto_almacen, name='guardar_producto_almacen'),

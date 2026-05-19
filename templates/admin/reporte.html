@@ -218,11 +218,11 @@
             <form method="GET" style="display: contents;">
                 <div class="filter-group">
                     <label for="inicio">Fecha Inicio</label>
-                    <input type="date" name="inicio" id="inicio" value="{{ request.GET.inicio }}">
+                    <input type="date" name="inicio" id="inicio" value="{{ fecha_inicio }}">
                 </div>
                 <div class="filter-group">
                     <label for="fin">Fecha Fin</label>
-                    <input type="date" name="fin" id="fin" value="{{ request.GET.fin }}">
+                    <input type="date" name="fin" id="fin" value="{{ fecha_fin }}">
                 </div>
                 <button type="submit" class="btn-filter">Filtrar</button>
             </form>
@@ -235,7 +235,7 @@
                     <div class="stat-label">Total de Ventas</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">${{ total_generado }}</div>
+                    <div class="stat-value">${{ total_generado|floatformat:2 }}</div>
                     <div class="stat-label">Ingreso Total</div>
                 </div>
             </div>
@@ -258,12 +258,12 @@
                                 <td>{{ venta.fecha|date:"d/m/Y H:i" }}</td>
                                 <td>{{ venta.usuario.username }}</td>
                                 <td>{{ venta.sucursal.nombre }}</td>
-                                <td><strong>${{ venta.total }}</strong></td>
+                                <td><strong>${{ venta.total|floatformat:2 }}</strong></td>
                             </tr>
                         {% endfor %}
                         <tr class="total-row">
                             <td colspan="4">TOTAL GENERAL:</td>
-                            <td>${{ total_generado }}</td>
+                            <td>${{ total_generado|floatformat:2 }}</td>
                         </tr>
                     </tbody>
                 </table>

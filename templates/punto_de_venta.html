@@ -303,42 +303,50 @@
         <!-- Main Actions -->
         <h2 class="section-title">Acciones Principales</h2>
         <div class="dashboard-grid">
+            {% if user.rol == 'admin' or user.rol == 'cajero' or user.rol == 'vendedor' %}
             <div class="card">
                 <div class="card-icon">💰</div>
                 <h3>Nueva Venta</h3>
                 <p>Registra una nueva venta o transacción en el sistema</p>
                 <a href="{% url 'crear_venta' %}" class="card-btn">Ir →</a>
             </div>
+            {% endif %}
 
+            {% if user.rol == 'admin' %}
             <div class="card">
                 <div class="card-icon">📊</div>
                 <h3>Reportes</h3>
                 <p>Consulta reportes de ventas y estadísticas</p>
                 <a href="{% url 'reporte_ventas' %}" class="card-btn">Ir →</a>
             </div>
+            {% endif %}
 
+            {% if user.rol == 'admin' or user.rol == 'cajero' or user.rol == 'vendedor' %}
             <div class="card">
                 <div class="card-icon">📦</div>
                 <h3>Inventario</h3>
                 <p>Consulta la disponibilidad de productos</p>
                 <a href="{% url 'consultar_inventario' %}" class="card-btn">Ir →</a>
             </div>
+            {% endif %}
 
+            {% if user.rol == 'admin' or user.rol == 'cajero' or user.rol == 'vendedor' %}
             <div class="card">
                 <div class="card-icon">💳</div>
                 <h3>Corte de Caja</h3>
                 <p>Realiza el cierre de caja del día</p>
                 <a href="{% url 'corte_caja' %}" class="card-btn">Ir →</a>
             </div>
+            {% endif %}
 
+            {% if user.is_superuser %}
             <div class="card">
                 <div class="card-icon">⚙️</div>
-                <h3>Administración</h3>
-                <p>Accede al panel administrativo completo</p>
-                <a href="{% url 'admin:index' %}" class="card-btn">Ir →</a>
+                <h3>Configuración</h3>
+                <p>Accede al panel de configuración y gestión de usuarios.</p>
+                <a href="{% url 'configuracion' %}" class="card-btn">Ir →</a>
             </div>
 
-            {% if user.rol == 'admin' %}
             <div class="card">
                 <div class="card-icon">🏬</div>
                 <h3>Almacén</h3>
